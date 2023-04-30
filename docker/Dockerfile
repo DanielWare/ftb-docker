@@ -35,4 +35,4 @@ VOLUME ["/ftb"]
 
 USER "$USER"
 
-CMD ["/ftb/start.sh"]
+CMD ["sh", "/ftb/start.sh"]
