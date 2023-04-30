@@ -27,7 +27,7 @@ WORKDIR /ftb
 RUN echo "eula=true" > eula.txt
 
 RUN addgroup -g "$PGID" -S "$GROUP" \
-    && adduser -u "$PUID" -G "$GROUP" \
+    && adduser -u "$PUID" -D -G "$GROUP" "$USER" \
     && chown -R "$USER":"$GROUP" /ftb
 
 EXPOSE 25565
