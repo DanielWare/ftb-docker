@@ -1,0 +1,54 @@
+name: deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      mod_pack_id:
+        required: true
+        description: 'The Id of the FTB mod pack'
+      version_id:
+        required: true
+        description: 'The version of the FTB mod pack'
+        default: '--latest'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: danielware/ftb-docker
+
+jobs:
+  build_image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          build-args: |
+            MOD_PACK_ID=${{ github.event.inputs.mod_pack_id }}
+            VERSION_ID=${{ github.event.inputs.version_id }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
