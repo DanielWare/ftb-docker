@@ -28,6 +28,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: type=raw,${{ github.event.inputs.mod_pack_id }}-${{ github.event.inputs.version_id }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
