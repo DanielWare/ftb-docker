@@ -1,2 +1,2 @@
-# ftb-docker
-ftb servers in a docker container
+# ftb-servers
+* containerized ftb servers
