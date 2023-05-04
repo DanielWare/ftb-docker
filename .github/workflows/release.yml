@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: danielware/ftb-servers
+  IMAGE_NAME: danielware/ftb-server
 
 permissions: 
   packages: write
