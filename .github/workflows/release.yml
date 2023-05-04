@@ -1,14 +1,10 @@
 name: deployment
 
 on:
-  workflow_dispatch:
-    inputs:
-      mod_pack_id:
-        required: true
-        description: 'The Id of the FTB mod pack'
-      version_id:
-        required: true
-        description: 'The version of the FTB mod pack'
+  push:
+    branches: main
+  pull_request:
+    types: [opened,edited]
 
 env:
   REGISTRY: ghcr.io
@@ -25,33 +21,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3.5.2
 
-      - name: Get Modpack Name
-        id: mod_pack_meta
-        uses: fjogeleit/http-request-action@v1
-        with: 
-          url: 'https://api.modpacks.ch/public/modpack/${{ github.event.inputs.mod_pack_id }}'
-          method: 'GET'
-
-      - name: Get Modpack Version
-        id: mod_pack_version_meta
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: 'https://api.modpacks.ch/public/modpack/${{ github.event.inputs.mod_pack_id }}/${{ github.event.inputs.version_id }}'
-          method: 'GET'
-
-      - name: Parse Modpack variables
-        id: mod_variables
-        run: |
-          export NAME=$(echo "${{ fromJson(steps.mod_pack_meta.outputs.response).name }}" | tr [:upper:] [:lower:] | tr ' ' '_')
-          echo "NAME=$NAME" >> "$GITHUB_OUTPUT"
-          echo "VERSION=${{ fromJson(steps.mod_pack_version_meta.outputs.response).name }}" >> "$GITHUB_OUTPUT"
-
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: type=raw,${{ steps.mod_variables.outputs.NAME }}-${{ steps.mod_variables.outputs.VERSION }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=pr
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -71,8 +48,5 @@ jobs:
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          build-args: |
-            MOD_PACK_ID=${{ github.event.inputs.mod_pack_id }}
-            VERSION_ID=${{ github.event.inputs.version_id }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
