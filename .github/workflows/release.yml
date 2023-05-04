@@ -9,7 +9,6 @@ on:
       version_id:
         required: true
         description: 'The version of the FTB mod pack'
-        default: '--latest'
 
 env:
   REGISTRY: ghcr.io
@@ -26,12 +25,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Get Modpack Name
+        id: mod_pack_meta
+        uses: fjogeleit/http-request-action@v1
+        with: 
+          url: 'https://api.https://api.modpacks.ch/public/modpack/${{ github.event.inputs.mod_pack_id }}'
+          method: 'GET'
+
+      - name: Get Modpack Version
+        id: mod_pack_version_meta
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: 'https://api.https://api.modpacks.ch/public/modpack/${{ github.event.inputs.mod_pack_id }}/${{ github.event.inputs.version_id }}'
+          method: 'GET'
+
+      - name: Parse Modpack variables
+        id: mod_variables
+        run: |
+          export NAME=$(echo "${{ fromJson(steps.mod_pack_meta.outputs.response).name }}" | tr [:upper:] [:lower:] | tr ' ' '_')
+          echo "NAME=$NAME" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${{ fromJson(steps.mod_pack_version_meta.outputs.response).name }}" >> "$GITHUB_OUTPUT"
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: type=raw,${{ github.event.inputs.mod_pack_id }}-${{ github.event.inputs.version_id }}
+          tags: type=raw,${{ steps.mod_variables.outputs.NAME }}-${{ steps.mod_variables.outputs.VERSION }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -56,4 +76,3 @@ jobs:
             VERSION_ID=${{ github.event.inputs.version_id }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
