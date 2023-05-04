@@ -14,27 +14,28 @@ RUN mkdir -p /ftb
 RUN chmod ugo=rwx /ftb
 
 FROM alpine:${IMAGE_VERSION} as final
-COPY --from=base /tmp/ftbinstaller/server_installer /server_installer
+RUN mkdir -p /ftb
+COPY --from=base /tmp/ftbinstaller/server_installer /ftb/server_installer
+COPY ./entrypoint.sh /entrypoint.sh
+WORKDIR /ftb
 
 ARG USER=ftb
 ARG GROUP=ftb
 ARG PUID=845
 ARG PGID=845
-ARG MOD_PACK_ID=''
-ARG VERSION_ID='--latest'
 
-RUN /server_installer ${MOD_PACK_ID} ${VERSION_ID} --path "/ftb" --auto
-
-WORKDIR /ftb
+ENV MOD_PACK_ID=''
+ENV VERSION_ID='--latest'
 
 RUN echo "eula=true" > eula.txt
 
 RUN addgroup -g "$PGID" -S "$GROUP" \
     && adduser -u "$PUID" -D -G "$GROUP" "$USER" \
-    && chown -R "$USER":"$GROUP" /ftb
+    && chown -R "$USER":"$GROUP" /ftb \
+    && chown "$USER":"$GROUP" /entrypoint.sh \
+    && chmod +x /entrypoint.sh
 
 EXPOSE 25565
-VOLUME ["/ftb/world"]
 USER "$USER"
 
-CMD ["sh", "/ftb/start.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
